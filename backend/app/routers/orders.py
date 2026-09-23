@@ -31,15 +31,13 @@ def create_order(order: OrderCreate, db: Session = Depends(database.get_db), cur
 def get_order(order_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(auth.get_current_active_user)):
     """
     Get order details.
-    VULNERABLE: Broken Object Level Authorization (BOLA).
-    Checks that the user is authenticated, but NOT if the order belongs to them.
+    SECURE IMPLEMENTATION: Enforces Object Level Authorization.
     """
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
         
-    # SECURE IMPLEMENTATION WOULD BE:
-    # if order.customer_id != current_user.id and current_user.role != models.UserRole.admin:
-    #     raise HTTPException(status_code=403, detail="Not authorized")
+    if order.customer_id != current_user.id and current_user.role != models.UserRole.admin:
+        raise HTTPException(status_code=403, detail="Not authorized to view this order")
     
     return order

@@ -17,9 +17,11 @@ def read_users_me(current_user: models.User = Depends(auth.get_current_active_us
 def get_user(user_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(auth.get_current_active_user)):
     """
     Get a specific user's profile.
-    Intentionally vulnerable to BOLA in the lab version? We will implement that later.
-    For now, just a standard endpoint.
+    SECURE IMPLEMENTATION: Only admins or the user themselves can view this.
     """
+    if current_user.id != user_id and current_user.role != models.UserRole.admin:
+        raise HTTPException(status_code=403, detail="Not authorized to view this profile")
+        
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -30,8 +32,11 @@ def get_user(user_id: int, db: Session = Depends(database.get_db), current_user:
 def update_user_role(user_id: int, role: str, db: Session = Depends(database.get_db), current_user: models.User = Depends(auth.get_current_active_user)):
     """
     Update a user's role.
-    Intentionally vulnerable: Missing Admin-only check (Broken Function Level Authorization).
+    SECURE IMPLEMENTATION: Only admins can update roles.
     """
+    if current_user.role != models.UserRole.admin:
+        raise HTTPException(status_code=403, detail="Not authorized to perform this action")
+        
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

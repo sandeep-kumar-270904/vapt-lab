@@ -24,14 +24,10 @@ class ProductResponse(ProductCreate):
 
 @router.get("/", response_model=List[ProductResponse])
 def list_products(search: str = None, db: Session = Depends(database.get_db)):
-    """List products. Intentionally vulnerable to SQL Injection in lab."""
+    """List products."""
     if search:
-        # VULNERABLE: Direct string interpolation
-        query = f"SELECT * FROM products WHERE name LIKE '%{search}%'"
-        result = db.execute(text(query)).fetchall()
-        # Convert raw rows back to objects or dicts for response (simplification for lab)
-        products = [{"id": r[0], "seller_id": r[1], "name": r[2], "description": r[3], "price": r[4], "stock": r[5]} for r in result]
-        return products
+        # SECURE: Using ORM which parameterizes queries automatically
+        return db.query(models.Product).filter(models.Product.name.ilike(f"%{search}%")).all()
     else:
         return db.query(models.Product).all()
 
